@@ -1,0 +1,29 @@
+# NOTICE
+
+This project is based on [Pathoschild/SMAPI](https://github.com/Pathoschild/SMAPI)
+(Stardew Valley Modding API), licensed under LGPL-3.0 (see LICENSE.txt).
+
+## Android adaptation
+
+The Android adaptation layer (`src/SMAPI/Mobile/`) follows the design approach
+of the following LGPL-3.0 projects:
+
+- [NRT-SMAPI-Android](https://github.com/NRTnarathip/SMAPI-Android-1.6)
+  (by NRTnarathip) — Android adaptation layer organization, frame-based mod
+  loading, mod fix framework, audio (NVorbis/OGG) support, etc.
+- [ZaneYork/SMAPI](https://github.com/ZaneYork/SMAPI) — early Android
+  adaptation reference (e.g. PlatformAssemblyMap Android handling).
+
+Both upstream projects are distributed under LGPL-3.0, consistent with this
+project's license. This project re-integrates and adapts the design on top of
+upstream SMAPI 4.5.2.
+
+The companion Android launcher (which loads this SMAPI into the game process)
+is an independent clean-room implementation inspired by the general approach
+of [NRT-SMAPILoader](https://github.com/NRTnarathip/SMAPI-Launcher) (GPL-3.0);
+it does not contain code from that project.
+
+## Contact
+
+- QQ: 257141477
+- GitHub: https://github.com/qbhx224

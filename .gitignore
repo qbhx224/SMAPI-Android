@@ -52,3 +52,4 @@ src/SMAPI.ModBuildConfig.Analyzer.Tests
 src/SMAPI.Mods.ConsoleCommands
 src/SMAPI.Mods.SaveBackup
 /src/PackSMAPIZip/PackSMAPIZip BinOutput.lnk
+SMAPI-Android-*.zip

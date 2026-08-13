@@ -11,10 +11,10 @@ internal static class ExceptionHelper
     ** Public methods
     *********/
     /// <param name="exception">The error to summarize.</param>
-    extension(Exception? exception)
-    {
+
+
         /// <summary>Get a string representation of an exception suitable for writing to the error log.</summary>
-        public string GetLogSummary()
+        public static string GetLogSummary(this Exception? exception)
         {
             try
             {
@@ -44,7 +44,7 @@ internal static class ExceptionHelper
                 throw new InvalidOperationException($"Failed handling {exception?.GetType().FullName} (original message: {exception?.Message})", ex);
             }
         }
-    }
+
 
     /// <summary>Simplify common patterns in exception log messages that don't convey useful info.</summary>
     /// <param name="message">The log message to simplify.</param>

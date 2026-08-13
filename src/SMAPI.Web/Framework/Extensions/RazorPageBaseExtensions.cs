@@ -9,16 +9,16 @@ namespace StardewModdingAPI.Web.Framework.Extensions;
 public static class RazorPageBaseExtensions
 {
     /// <param name="page">The page to extend.</param>
-    extension(RazorPageBase page)
-    {
+
+
         /// <summary>Get a serialized JSON representation of the value.</summary>
         /// <param name="value">The value to serialize.</param>
         /// <returns>The serialized JSON.</returns>
         /// <remarks>This bypasses unnecessary validation (e.g. not allowing null values) in <see cref="IJsonHelper.Serialize"/>.</remarks>
-        public IHtmlContent ForJson(object? value)
+        public static IHtmlContent ForJson(this RazorPageBase page, object? value)
         {
             string json = JsonConvert.SerializeObject(value);
             return new HtmlString(json);
         }
-    }
+
 }

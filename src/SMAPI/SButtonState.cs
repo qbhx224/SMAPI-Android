@@ -20,12 +20,12 @@ public enum SButtonState
 public static class InputStatusExtensions
 {
     /// <param name="state">The button state.</param>
-    extension(SButtonState state)
-    {
+
+
         /// <summary>Whether the button was pressed or held.</summary>
-        public bool IsDown()
+        public static bool IsDown(this SButtonState state)
         {
             return state is SButtonState.Held or SButtonState.Pressed;
         }
-    }
+
 }

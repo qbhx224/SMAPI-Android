@@ -21,7 +21,8 @@ public class ModFolder
 
     /// <summary>The folder containing the mod's manifest.json.</summary>
     [JsonIgnore]
-    public DirectoryInfo Directory => field ??= new DirectoryInfo(this.DirectoryPath);
+    public DirectoryInfo Directory => this.directory ??= new DirectoryInfo(this.DirectoryPath);
+    private DirectoryInfo? directory;
 
     /// <summary>The mod type.</summary>
     public ModType Type { get; }
@@ -57,7 +58,7 @@ public class ModFolder
     public ModFolder(DirectoryInfo root, DirectoryInfo directory, ModType type, Manifest? manifest, ModParseError manifestParseError, string? manifestParseErrorText)
     {
         // save info
-        this.Directory = directory;
+        this.directory = directory;
         this.DirectoryPath = directory.FullName;
         this.Type = type;
         this.Manifest = manifest;

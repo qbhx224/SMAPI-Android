@@ -23,7 +23,8 @@ internal class AssetInfo : IAssetInfo
     public IAssetName Name { get; }
 
     /// <inheritdoc />
-    public IAssetName NameWithoutLocale => field ??= this.Name.GetBaseAssetName();
+    public IAssetName NameWithoutLocale => this.nameWithoutLocale ??= this.Name.GetBaseAssetName();
+    private IAssetName? nameWithoutLocale;
 
     /// <inheritdoc />
     public Type DataType { get; }

@@ -7,10 +7,10 @@ namespace StardewModdingAPI.Framework.Extensions;
 internal static class ClickableMenuExtensions
 {
     /// <param name="menu">The clickable menu to extend.</param>
-    extension(IClickableMenu menu)
-    {
+
+
         /// <summary>Get a string representation of the menu chain to the given menu (including the specified menu), in parent to child order.</summary>
-        public string GetMenuChainLabel()
+        public static string GetMenuChainLabel(this IClickableMenu menu)
         {
             Stack<string> chain = [];
 
@@ -19,5 +19,5 @@ internal static class ClickableMenuExtensions
 
             return string.Join(" > ", chain);
         }
-    }
+
 }

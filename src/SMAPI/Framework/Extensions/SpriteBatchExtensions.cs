@@ -7,13 +7,13 @@ namespace StardewModdingAPI.Framework.Extensions;
 internal static class SpriteBatchExtensions
 {
     /// <param name="spriteBatch">The sprite batch to extend.</param>
-    extension(SpriteBatch spriteBatch)
-    {
+
+
         /// <summary>Get whether the sprite batch is between a begin and end pair.</summary>
         /// <param name="reflection">The reflection helper with which to access private fields.</param>
-        public bool IsOpen(Reflector reflection)
+        public static bool IsOpen(this SpriteBatch spriteBatch, Reflector reflection)
         {
             return reflection.GetField<bool>(spriteBatch, "_beginCalled").GetValue();
         }
-    }
+
 }

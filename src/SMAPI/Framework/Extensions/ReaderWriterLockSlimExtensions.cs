@@ -7,11 +7,11 @@ namespace StardewModdingAPI.Framework.Extensions;
 internal static class ReaderWriterLockSlimExtensions
 {
     /// <param name="lock">The lock to extend.</param>
-    extension(ReaderWriterLockSlim @lock)
-    {
+
+
         /// <summary>Run code within a read lock.</summary>
         /// <param name="action">The action to perform.</param>
-        public void InReadLock(Action action)
+        public static void InReadLock(this ReaderWriterLockSlim @lock, Action action)
         {
             @lock.EnterReadLock();
             try
@@ -27,7 +27,7 @@ internal static class ReaderWriterLockSlimExtensions
         /// <summary>Run code within a read lock.</summary>
         /// <typeparam name="TReturn">The action's return value.</typeparam>
         /// <param name="action">The action to perform.</param>
-        public TReturn InReadLock<TReturn>(Func<TReturn> action)
+        public static TReturn InReadLock<TReturn>(this ReaderWriterLockSlim @lock, Func<TReturn> action)
         {
             @lock.EnterReadLock();
             try
@@ -42,7 +42,7 @@ internal static class ReaderWriterLockSlimExtensions
 
         /// <summary>Run code within a write lock.</summary>
         /// <param name="action">The action to perform.</param>
-        public void InWriteLock(Action action)
+        public static void InWriteLock(this ReaderWriterLockSlim @lock, Action action)
         {
             @lock.EnterWriteLock();
             try
@@ -58,7 +58,7 @@ internal static class ReaderWriterLockSlimExtensions
         /// <summary>Run code within a write lock.</summary>
         /// <typeparam name="TReturn">The action's return value.</typeparam>
         /// <param name="action">The action to perform.</param>
-        public TReturn InWriteLock<TReturn>(Func<TReturn> action)
+        public static TReturn InWriteLock<TReturn>(this ReaderWriterLockSlim @lock, Func<TReturn> action)
         {
             @lock.EnterWriteLock();
             try
@@ -70,5 +70,5 @@ internal static class ReaderWriterLockSlimExtensions
                 @lock.ExitWriteLock();
             }
         }
-    }
+
 }

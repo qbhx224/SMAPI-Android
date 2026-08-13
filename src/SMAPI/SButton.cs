@@ -602,30 +602,30 @@ public static class SButtonExtensions
     ** Public methods
     *********/
     /// <param name="key">The keyboard button to convert.</param>
-    extension(Keys key)
-    {
+
+
         /// <summary>Get the <see cref="SButton"/> equivalent for the given button.</summary>
-        public SButton ToSButton()
+        public static SButton ToSButton(this Keys key)
         {
             return (SButton)key;
         }
-    }
+
 
     /// <param name="key">The controller button to convert.</param>
-    extension(Buttons key)
-    {
+
+
         /// <summary>Get the <see cref="SButton"/> equivalent for the given button.</summary>
-        public SButton ToSButton()
+        public static SButton ToSButton(this Buttons key)
         {
             return (SButton)(SButtonExtensions.ControllerOffset + key);
         }
-    }
+
 
     /// <param name="input">The Stardew Valley button to convert.</param>
-    extension(InputButton input)
-    {
+
+
         /// <summary>Get the <see cref="SButton"/> equivalent for the given button.</summary>
-        public SButton ToSButton()
+        public static SButton ToSButton(this InputButton input)
         {
             // derived from InputButton constructors
             if (input.mouseLeft)
@@ -634,15 +634,15 @@ public static class SButtonExtensions
                 return SButton.MouseRight;
             return input.key.ToSButton();
         }
-    }
+
 
     /// <param name="input">The button to extend.</param>
-    extension(SButton input)
-    {
+
+
         /// <summary>Get the <see cref="Keys"/> equivalent for the given button.</summary>
         /// <param name="key">The keyboard equivalent.</param>
         /// <returns>Returns whether the value was converted successfully.</returns>
-        public bool TryGetKeyboard(out Keys key)
+        public static bool TryGetKeyboard(this SButton input, out Keys key)
         {
             key = (Keys)input;
             if (Enum.IsDefined(key))
@@ -655,7 +655,7 @@ public static class SButtonExtensions
         /// <summary>Get the <see cref="Buttons"/> equivalent for the given button.</summary>
         /// <param name="button">The controller equivalent.</param>
         /// <returns>Returns whether the value was converted successfully.</returns>
-        public bool TryGetController(out Buttons button)
+        public static bool TryGetController(this SButton input, out Buttons button)
         {
             button = (Buttons)(input - SButtonExtensions.ControllerOffset);
             if (Enum.IsDefined(button))
@@ -668,7 +668,7 @@ public static class SButtonExtensions
         /// <summary>Get the <see cref="InputButton"/> equivalent for the given button.</summary>
         /// <param name="button">The Stardew Valley input button equivalent.</param>
         /// <returns>Returns whether the value was converted successfully.</returns>
-        public bool TryGetStardewInput(out InputButton button)
+        public static bool TryGetStardewInput(this SButton input, out InputButton button)
         {
             // keyboard
             if (input.TryGetKeyboard(out Keys key))
@@ -690,7 +690,7 @@ public static class SButtonExtensions
         }
 
         /// <summary>Get whether the given button is equivalent to <see cref="Options.useToolButton"/>.</summary>
-        public bool IsUseToolButton()
+        public static bool IsUseToolButton(this SButton input)
         {
             if (input is SButton.ControllerX)
                 return true;
@@ -705,7 +705,7 @@ public static class SButtonExtensions
         }
 
         /// <summary>Get whether the given button is equivalent to <see cref="Options.actionButton"/>.</summary>
-        public bool IsActionButton()
+        public static bool IsActionButton(this SButton input)
         {
             if (input is SButton.ControllerA)
                 return true;
@@ -718,5 +718,5 @@ public static class SButtonExtensions
 
             return false;
         }
-    }
+
 }

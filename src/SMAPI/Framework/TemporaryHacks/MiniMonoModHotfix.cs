@@ -100,17 +100,17 @@ internal static class MiniMonoModHotfix
         }
     }
 
-    extension(MemberInfo member)
-    {
-        public Type? GetRealDeclaringType()
+
+
+        public static Type? GetRealDeclaringType(this MemberInfo member)
         {
             return member.DeclaringType ?? member.Module.GetModuleType();
         }
-    }
 
-    extension(Type? type)
-    {
-        public void FixReflectionCache()
+
+
+
+        public static void FixReflectionCache(this Type? type)
         {
             if (t_RuntimeType == null || p_RuntimeType_Cache == null || m_RuntimeTypeCache_GetFieldList == null || m_RuntimeTypeCache_GetPropertyList == null)
                 return;
@@ -147,7 +147,7 @@ internal static class MiniMonoModHotfix
                 entry.NeedsVerify = true;
             }
         }
-    }
+
 
     private static bool _Verify(CacheFixEntry entry, Type type)
     {

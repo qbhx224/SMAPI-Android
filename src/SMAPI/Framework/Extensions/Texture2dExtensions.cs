@@ -7,15 +7,16 @@ namespace StardewModdingAPI.Framework.Extensions;
 internal static class Texture2dExtensions
 {
     /// <param name="texture">The texture to extend.</param>
-    extension(Texture2D? texture)
-    {
+
+
         /// <summary>Set the texture name field.</summary>
         /// <param name="assetName">The asset name to set.</param>
         /// <returns>Returns the texture for chaining.</returns>
         [return: NotNullIfNotNull(nameof(texture))]
-        public Texture2D? SetName(IAssetName assetName)
+        public static Texture2D? SetName(this Texture2D? texture, IAssetName assetName)
         {
-            texture?.Name = assetName.Name;
+            if (texture != null)
+                texture.Name = assetName.Name;
 
             return texture;
         }
@@ -24,11 +25,12 @@ internal static class Texture2dExtensions
         /// <param name="assetName">The asset name to set.</param>
         /// <returns>Returns the texture for chaining.</returns>
         [return: NotNullIfNotNull(nameof(texture))]
-        public Texture2D? SetName(string assetName)
+        public static Texture2D? SetName(this Texture2D? texture, string assetName)
         {
-            texture?.Name = assetName;
+            if (texture != null)
+                texture.Name = assetName;
 
             return texture;
         }
-    }
+
 }

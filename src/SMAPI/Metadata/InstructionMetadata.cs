@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using Android.Views;
+using Force.DeepCloner;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 using Netcode;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Framework.ModLoading;
@@ -10,6 +14,9 @@ using StardewModdingAPI.Framework.ModLoading.Finders;
 using StardewModdingAPI.Framework.ModLoading.Rewriters;
 using StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_5;
 using StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_6;
+using StardewModdingAPI.Mobile;
+using StardewModdingAPI.Mobile.Facade;
+using StardewModdingAPI.Mobile.Mods;
 using StardewValley;
 using StardewValley.Audio;
 using StardewValley.BellsAndWhistles;
@@ -249,6 +256,10 @@ internal class InstructionMetadata
                 .MapFacade<ResourceClump, ResourceClumpFacade>()
                 .MapFacade<Ring, RingFacade>()
                 .MapFacade<ShippingBin, ShippingBinFacade>()
+                //android
+                .MapType(
+                    "StardewValley.Menus.ShopMenu/ShopTabClickableTextureComponent",
+                    typeof(ShopTabClickableTextureComponentFacade))
                 .MapFacade<ShopMenu, ShopMenuFacade>()
                 .MapFacade<Sign, SignFacade>()
                 .MapFacade<Slingshot, SlingshotFacade>()
@@ -270,6 +281,24 @@ internal class InstructionMetadata
                 .MapFacade<WorldDate, WorldDateFacade>()
                 .MapFacade(typeof(WorldMapManager).FullName!, typeof(WorldMapManagerFacade))
 
+#if SMAPI_FOR_ANDROID
+                //Map Method For Android Only
+                .MapFacade<GameMenu, GameMenuFacade>()
+                .MapFacade<MenuWithInventory, MenuWithInventoryFacade>()
+                .MapFacade<IClickableMenu, IClickableMenuFacadeAndroid>()
+                .MapFacade<SaveGame, SaveGameFacade>()
+                .MapFacade<ItemGrabMenu, ItemGrabMenuFacade>()
+                .MapFacade<InventoryPage, InventoryPageFacade>()
+                .MapFacade<Toolbar, ToolbarFacade>()
+                .MapFacade<OptionsPage, OptionsPageFacade>()
+                .MapFacade<SocialPage, SocialPageFacade>()
+                .MapFacade<OptionsDropDown, OptionsDropDownFacade>()
+                .MapType(typeof(KeyboardInput).FullName, typeof(KeyboardInput))
+                .MapType(typeof(KeyEventArgs).FullName, typeof(KeyEventArgs))
+                .MapType("StardewValley.Game1/BundleType", typeof(StardewValley.BundleType))
+                .MapType("StardewValley.Game1/MineChestType", typeof(MineChestType))
+
+#endif
                 // BuildableGameLocation merged into GameLocation
                 .MapFacade("StardewValley.Locations.BuildableGameLocation", typeof(BuildableGameLocationFacade))
                 .MapField("Netcode.NetCollection`1<StardewValley.Buildings.Building> StardewValley.Locations.BuildableGameLocation::buildings", typeof(GameLocation), nameof(GameLocation.buildings))
@@ -295,12 +324,80 @@ internal class InstructionMetadata
                 .MapMethod("System.Int32 StardewValley.Network.NetDirection::op_Implicit(StardewValley.Network.NetDirection)", typeof(ImplicitConversionOperatorsFacade), nameof(ImplicitConversionOperatorsFacade.NetDirection_ToInt))
                 .MapMethod("!0 StardewValley.Network.NetPausableField`3<Microsoft.Xna.Framework.Vector2,Netcode.NetVector2,Netcode.NetVector2>::op_Implicit(StardewValley.Network.NetPausableField`3<!0,!1,!2>)", typeof(NetPausableFieldFacade<Vector2, NetVector2, NetVector2>), nameof(NetPausableFieldFacade<Vector2, NetVector2, NetVector2>.op_Implicit));
 
+
+
+
             // heuristic rewrites
             yield return new HeuristicFieldRewriter(this.ValidateReferencesToAssemblies);
             yield return new HeuristicMethodRewriter(this.ValidateReferencesToAssemblies);
 
             // 32-bit to 64-bit in Stardew Valley 1.5.5
             yield return new ArchitectureAssemblyRewriter();
+
+            //rewriter virtual method to static method
+            yield return new MapMethodToStaticMethodRewriter()
+                .Add(typeof(OptionsElement), (method) => method.Name == "draw",
+                    typeof(OptionsElementRewriter), (method) => method.Name == "draw",
+                        (map) => { map.AddPramToSrc(typeof(IClickableMenu)); })
+                .AddWithMethodFullName(
+                    "System.Int32 StardewValley.Audio.IAudioEngine::GetCategoryIndex(System.String)",
+                   StardewAudioMethods.IAudioEngine_GetCategoryIndex_MethodInfo
+                )
+                .AddWithMethodFullName(
+                    "System.Void StardewValley.ISoundBank::AddCue(Microsoft.Xna.Framework.Audio.CueDefinition)",
+                   StardewAudioMethods.ISoundBank_AddCue_MethodInfo
+                )
+                //ICue Volume Property
+                .AddWithMethodFullName(
+                    StardewAudioMethods.get_Volume_FullName,
+                    StardewAudioMethods.ICue_get_Volume_MethodInfo
+                )
+                .AddWithMethodFullName(
+                    StardewAudioMethods.set_Volume_FullName,
+                    StardewAudioMethods.ICue_set_Volume_MethodInfo
+                )
+                //ICue Pitch Property
+                .AddWithMethodFullName(
+                    StardewAudioMethods.get_Pitch_FullName,
+                    StardewAudioMethods.Get_Pitch_ProxyMethodInfo
+                )
+                .AddWithMethodFullName(
+                    StardewAudioMethods.set_Pitch_FullName,
+                    StardewAudioMethods.Set_Pitch_ProxyMethodInfo
+                )
+                .AddWithMethodFullName(
+                    StardewAudioMethods.get_IsPitchBeingControlledByRPC_FullName,
+                    StardewAudioMethods.Get_IsPitchBeingControlledByRPC_MethodInfo
+                )
+                .AddWithMethodFullName(
+                    StardewAudioMethods.ISoundBank_Exists_MethodFullName,
+                    StardewAudioMethods.ISoundBank_Exists_MethodInfo
+                )
+
+                .AddWithTypeFullName(
+                    "Force.DeepCloner.DeepClonerExtensions",
+                    DeepClonerRewriter.OnRewriterIL
+                )
+                .AddWithTypeFullName(
+                    typeof(GameWindow).FullName,
+                    GameWindowRewriter.OnRewriteIL
+                )
+                .AddWithTypeFullName(
+                    "StardewValley.KeyboardInput",
+                    KeyboardInputRewriter.OnRewriteIL
+                )
+                .AddWithMethodFullName(
+                    "System.Void StardewValley.KeyEventHandler::.ctor(System.Object,System.IntPtr)",
+                    AccessTools.Method(typeof(KeyEventHandlerRewriter), nameof(KeyEventHandlerRewriter.Ctor))
+                )
+                .AddWithMethodFullName(
+                    LetterViewerMenuRewriter.OnPageChange_FullName,
+                    LetterViewerMenuRewriter.OnPageChangeProxy_MethodInfo
+                )
+                .AddWithTypeFullName(
+                   typeof(Texture2D).FullName,
+                   Texture2DRewriter.RewriterCallback
+                );
         }
 
         /****
@@ -313,8 +410,14 @@ internal class InstructionMetadata
         yield return new ReferenceToInvalidMemberFinder(this.ValidateReferencesToAssemblies, logTechnicalDetailsForBrokenMods);
 
         // code which may impact game stability
-        yield return new FieldFinder(typeof(SaveGame).FullName!, [nameof(SaveGame.serializer), nameof(SaveGame.farmerSerializer), nameof(SaveGame.locationSerializer)], InstructionHandleResult.DetectedSaveSerializer);
-        yield return new EventFinder(typeof(ISpecializedEvents).FullName!, [nameof(ISpecializedEvents.UnvalidatedUpdateTicked), nameof(ISpecializedEvents.UnvalidatedUpdateTicking)], InstructionHandleResult.DetectedUnvalidatedUpdateTick);
+#if SMAPI_FOR_ANDROID
+        yield return new FieldFinder(typeof(SaveGame).FullName!,
+            ["serializer", "farmerSerializer", "locationSerializer"],
+            InstructionHandleResult.DetectedSaveSerializer);
+#else
+        yield return new FieldFinder(typeof(SaveGame).FullName!, new[] { nameof(SaveGame.serializer), nameof(SaveGame.farmerSerializer), nameof(SaveGame.locationSerializer) }, InstructionHandleResult.DetectedSaveSerializer);
+#endif
+        yield return new EventFinder(typeof(ISpecializedEvents).FullName!, new[] { nameof(ISpecializedEvents.UnvalidatedUpdateTicked), nameof(ISpecializedEvents.UnvalidatedUpdateTicking) }, InstructionHandleResult.DetectedUnvalidatedUpdateTick);
 
         // direct console access
         yield return new TypeFinder(typeof(System.Console).FullName!, InstructionHandleResult.DetectedConsoleAccess);

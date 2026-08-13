@@ -1,11 +1,22 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
+#if !SMAPI_FOR_ANDROID
+using HarmonyLib;
+#endif
+using Java.Time;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Netcode;
 using StardewModdingAPI.Enums;
 using StardewModdingAPI.Events;
+using StardewModdingAPI.Framework.Events;
 using StardewModdingAPI.Framework.Extensions;
 using StardewModdingAPI.Framework.Input;
 using StardewModdingAPI.Framework.Reflection;
@@ -13,12 +24,20 @@ using StardewModdingAPI.Framework.Rendering;
 using StardewModdingAPI.Framework.StateTracking.Snapshots;
 using StardewModdingAPI.Framework.Utilities;
 using StardewModdingAPI.Internal;
+using StardewModdingAPI.Mobile;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Logging;
 using StardewValley.Menus;
 using StardewValley.Minigames;
 using xTile.Display;
+
+
+#if SMAPI_FOR_ANDROID
+using HarmonyLib;
+using StardewValley.Network;
+using static Android.Provider.CalendarContract;
+#endif
 
 namespace StardewModdingAPI.Framework;
 
@@ -92,6 +111,10 @@ internal class SGame : Game1
     [NonInstancedStatic]
     public static Func<IServiceProvider, string, LocalizedContentManager>? CreateContentManagerImpl;
 
+#if SMAPI_FOR_ANDROID
+    internal static SGame Instance { get; private set; }
+#endif
+
 
     /*********
     ** Public methods
@@ -121,7 +144,20 @@ internal class SGame : Game1
         Game1.log = gameLogger;
         Game1.multiplayer = this.InitialMultiplayer = multiplayer;
         Game1.hooks = modHooks;
+#if SMAPI_FOR_ANDROID
+        SGame.Instance = this;
+
+        try
+        {
+            // no need to set anything
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error try set Game1 _locations: " + ex);
+        }
+#else
         this._locations = new ObservableCollection<GameLocation>();
+#endif
 
         // init SMAPI
         this.Monitor = monitor;
@@ -144,13 +180,45 @@ internal class SGame : Game1
         return inputHandler.GetState(button);
     }
 
+
+#if SMAPI_FOR_ANDROID
+    public static IEnumerator<int> LoadContentEnumerator
+    {
+        get => (IEnumerator<int>)AccessTools.Field(typeof(Game1), "LoadContentEnumerator").GetValue(null);
+        set => AccessTools.Field(typeof(Game1), "LoadContentEnumerator").SetValue(null, value);
+    }
+    public static IEnumerator<int> GetLoadContentEnumerator()
+    {
+        return (IEnumerator<int>)AccessTools.Method(typeof(Game1), "GetLoadContentEnumerator").Invoke(game1, null);
+    }
+
+#endif
+
     /// <inheritdoc />
     protected override void LoadContent()
     {
         base.LoadContent();
-
+#if SMAPI_FOR_ANDROID
+        //Load All Mods First
+        //before calling method
+        //this.bigCraftableData = DataLoader.BigCraftables(content); in Game1.cs
+        Console.WriteLine("Done base.LoadContent()");
+        Console.WriteLine("try call InitializeBeforeFirstAssetLoaded for load all mod");
+        var InitializeBeforeFirstAssetLoaded = typeof(SCore).GetMethod("InitializeBeforeFirstAssetLoaded",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        InitializeBeforeFirstAssetLoaded.Invoke(SCore.Instance, null);
+#else
         this.OnContentLoaded();
+#endif
     }
+
+#if SMAPI_FOR_ANDROID
+    internal void OnAndroidContentLoaded()
+    {
+        this.OnContentLoaded();
+        Console.WriteLine("Ready for Game Launched");
+    }
+#endif
 
     /// <inheritdoc />
     public override bool ShouldDrawOnBuffer()
@@ -179,8 +247,8 @@ internal class SGame : Game1
         return SGame.CreateContentManagerImpl(serviceProvider, rootDirectory);
     }
 
-    /// <inheritdoc />
-    [SuppressMessage("ReSharper", "ParameterHidesMember")]
+    ///// <inheritdoc />
+    //[SuppressMessage("ReSharper", "ParameterHidesMember")]
     protected internal override IDisplayDevice CreateDisplayDevice(ContentManager content, GraphicsDevice graphicsDevice)
     {
         return new SDisplayDevice(content, graphicsDevice);
@@ -224,7 +292,11 @@ internal class SGame : Game1
         if (this.IsFirstTick)
         {
             this.Input.TrueUpdate();
+#if SMAPI_FOR_ANDROID
+            this.Watchers = new WatcherCore(this.Input, this._locations);
+#else
             this.Watchers = new WatcherCore(this.Input, (ObservableCollection<GameLocation>)this._locations);
+#endif
         }
 
         // update

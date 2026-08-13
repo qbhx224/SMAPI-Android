@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Microsoft.Xna.Framework;
@@ -6,6 +7,7 @@ using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI.Enums;
 using StardewModdingAPI.Framework.Extensions;
 using StardewModdingAPI.Internal;
+using StardewModdingAPI.Mobile;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Menus;
@@ -54,6 +56,10 @@ internal class SModHooks : DelegatingModHooks
         this.OnStageChanged = onStageChanged;
         this.OnRenderingStep = onRenderingStep;
         this.OnRenderedStep = onRenderedStep;
+
+#if SMAPI_FOR_ANDROID
+        AndroidSModHooks.Init();
+#endif
     }
 
     /// <inheritdoc />
@@ -66,9 +72,13 @@ internal class SModHooks : DelegatingModHooks
     /// <inheritdoc />
     public override Task StartTask(Task task, string id)
     {
+#if SMAPI_FOR_ANDROID
+        return AndroidSModHooks.StartTaskBackground(task, id);
+#else
         this.Monitor.Log($"Synchronizing '{id}' task...");
         task.RunSynchronously();
         this.Monitor.Log("   task complete.");
+#endif
         return task;
     }
 
@@ -102,8 +112,12 @@ internal class SModHooks : DelegatingModHooks
     }
 
     /// <inheritdoc />
+#if SMAPI_FOR_ANDROID
+    internal static RenderSteps CurrentRenderedStep = RenderSteps.FullScene;
+#endif
     public override void OnRendered(RenderSteps step, SpriteBatch sb, GameTime time, RenderTarget2D? target_screen)
     {
+        CurrentRenderedStep = step;
         this.OnRenderedStep(step, sb, target_screen);
     }
 

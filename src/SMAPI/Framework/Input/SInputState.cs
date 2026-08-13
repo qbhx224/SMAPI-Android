@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using StardewValley;
+using static Android.Renderscripts.ScriptGroup;
 
 #pragma warning disable 809 // obsolete override of non-obsolete method (this is deliberate)
 namespace StardewModdingAPI.Framework.Input;
@@ -74,6 +79,13 @@ internal sealed class SInputState : InputState
         // update base state
         base.Update();
 
+#if SMAPI_FOR_ANDROID
+        //it important
+        //because _currentTouchState it's need update  into _currentMouseState
+        //and _currentGamepadState too
+        base.UpdateStates();//Don't forget update Input State first
+#endif
+
         // update SMAPI extended data
         // note: Stardew Valley is *not* in UI mode when this code runs
         try
@@ -97,6 +109,20 @@ internal sealed class SInputState : InputState
 
             pressedButtons.Clear();
             SInputState.FillPressedButtons(pressedButtons, keyboard, mouse, controller);
+
+            // Binding Back button to Escape
+            {
+                HashSet<SButton> keyboardButtons = new();
+                keyboard.FillPressedButtons(keyboardButtons);
+                foreach (var btn in keyboardButtons)
+                {
+                    if (btn == SButton.Back)
+                    {
+                        this.OverrideButton(SButton.Escape, true);
+                        break;
+                    }
+                }
+            }
 
             // apply overrides
             if (this.CustomPressedKeys.Count > 0 || this.CustomReleasedKeys.Count > 0)
@@ -238,6 +264,11 @@ internal sealed class SInputState : InputState
     {
         Vector2 screenPixels = new(mouseState.X * zoomMultiplier, mouseState.Y * zoomMultiplier);
         Vector2 tile = new((int)((Game1.viewport.X + screenPixels.X) / Game1.tileSize), (int)((Game1.viewport.Y + screenPixels.Y) / Game1.tileSize));
+#if SMAPI_FOR_ANDROID
+        if (Game1.player == null)
+            return new CursorPosition(absolutePixels, screenPixels, tile, Vector2.Zero);
+#endif
+
         Vector2 grabTile = (Game1.mouseCursorTransparency > 0 && Utility.tileWithinRadiusOfPlayer((int)tile.X, (int)tile.Y, 1, Game1.player)) // derived from Game1.pressActionButton
             ? tile
             : Game1.player.GetGrabTile();

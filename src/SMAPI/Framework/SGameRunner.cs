@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
+using StardewModdingAPI.Mobile;
 using StardewModdingAPI.Enums;
 using StardewModdingAPI.Framework.Input;
 using StardewModdingAPI.Framework.Reflection;
 using StardewValley;
 using StardewValley.Logging;
+using StardewModdingAPI.Internal;
 
 namespace StardewModdingAPI.Framework;
 
@@ -41,7 +46,11 @@ internal class SGameRunner : GameRunner
     private readonly Action<LoadStage> OnLoadStageChanged;
 
     /// <summary>Raised when XNA is updating (roughly 60 times per second).</summary>
+#if SMAPI_FOR_ANDROID
+    internal Action<GameTime, Action> OnGameUpdating;
+#else
     private readonly Action<GameTime, Action> OnGameUpdating;
+#endif
 
     /// <summary>Raised when the game instance for a local split-screen player is updating (once per <see cref="OnGameUpdating"/> per player).</summary>
     private readonly Action<SGame, GameTime, Action> OnPlayerInstanceUpdating;
@@ -133,8 +142,6 @@ internal class SGameRunner : GameRunner
     /// <inheritdoc />
     public override void RemoveGameInstance(Game1 gameInstance)
     {
-        base.RemoveGameInstance(gameInstance);
-
         if (this.gameInstances.Count <= 1)
             EarlyConstants.LogScreenId = null;
         this.UpdateForSplitScreenChanges();
@@ -163,6 +170,7 @@ internal class SGameRunner : GameRunner
     /// <remarks>This overrides the logic in <see cref="Game1.exitEvent"/> to let SMAPI clean up before exit.</remarks>
     protected override void OnExiting(object sender, EventArgs args)
     {
+        Console.WriteLine("On Exiting()");
         this.OnGameExiting();
     }
 
@@ -170,7 +178,157 @@ internal class SGameRunner : GameRunner
     /// <param name="gameTime">A snapshot of the game timing state.</param>
     protected override void Update(GameTime gameTime)
     {
-        this.OnGameUpdating(gameTime, () => base.Update(gameTime));
+        this.OnGameUpdating(gameTime, () =>
+        {
+            try
+            {
+                base.Update(gameTime);
+                //this.Update_Debug(gameTime);
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine("error on SGameRuuner.Update: " + err);
+            }
+        }
+        );
+    }
+    void Update_Debug(GameTime gameTime)
+    {
+        var GameStateQuery_UpdateMethod = AccessTools.Method(typeof(GameStateQuery), nameof(GameStateQuery.Update));
+        GameStateQuery_UpdateMethod.Invoke(null, null);
+
+        for (int i = 0; i < this.activeNewDayProcesses.Count; i++)
+        {
+            KeyValuePair<Game1, IEnumerator<int>> keyValuePair = this.activeNewDayProcesses[i];
+            Game1 key = this.activeNewDayProcesses[i].Key;
+            LoadInstance(key);
+            if (!keyValuePair.Value.MoveNext())
+            {
+                key.isLocalMultiplayerNewDayActive = false;
+                this.activeNewDayProcesses.RemoveAt(i);
+                i--;
+                Utility.CollectGarbage();
+            }
+
+            SaveInstance(key);
+        }
+
+        while (this.startButtonState.Count < 4)
+        {
+            this.startButtonState.Add(-1);
+        }
+
+        for (PlayerIndex playerIndex = PlayerIndex.One; playerIndex <= PlayerIndex.Four; playerIndex++)
+        {
+            if (GamePad.GetState(playerIndex).IsButtonDown(Buttons.Start))
+            {
+                if (this.startButtonState[(int)playerIndex] >= 0)
+                {
+                    this.startButtonState[(int)playerIndex]++;
+                }
+            }
+            else
+            {
+                this.startButtonState[(int)playerIndex] = 0;
+            }
+        }
+
+        for (int j = 0; j < this.gameInstances.Count; j++)
+        {
+            Game1 game = this.gameInstances[j];
+            LoadInstance(game);
+            if (j == 0)
+            {
+                DebugTools.BeforeGameUpdate(this, ref gameTime);
+                PlayerIndex playerIndex2 = PlayerIndex.Two;
+                if (game.instanceOptions.gamepadMode == Options.GamepadModes.ForceOff)
+                {
+                    playerIndex2 = PlayerIndex.One;
+                }
+
+                for (PlayerIndex playerIndex3 = playerIndex2; playerIndex3 <= PlayerIndex.Four; playerIndex3++)
+                {
+                    bool flag = false;
+                    foreach (Game1 gameInstance in this.gameInstances)
+                    {
+                        if (gameInstance.instancePlayerOneIndex == playerIndex3)
+                        {
+                            flag = true;
+                            break;
+                        }
+                    }
+
+                    if (!flag && game.IsLocalCoopJoinable() && this.IsStartDown(playerIndex3) && game.ShowLocalCoopJoinMenu())
+                    {
+                        this.InvalidateStartPress(playerIndex3);
+                    }
+                }
+            }
+            else
+            {
+                Game1.options.gamepadMode = Options.GamepadModes.ForceOn;
+            }
+
+            //Game1.debugTimings.StartUpdateTimer();
+            try
+            {
+                game.Instance_Update(gameTime);
+            }
+            catch (Exception err)
+            {
+                Console.WriteLine("error game.Instance_Update(gameTime); " + err);
+            }
+            //Game1.debugTimings.StopUpdateTimer();
+            SaveInstance(game);
+        }
+
+        if (this.gameInstancesToRemove.Count > 0)
+        {
+            foreach (Game1 item in this.gameInstancesToRemove)
+            {
+                LoadInstance(item);
+                item.exitEvent(null, null);
+                this.gameInstances.Remove(item);
+                Game1.game1 = null;
+            }
+
+            for (int k = 0; k < this.gameInstances.Count; k++)
+            {
+                Game1 game2 = this.gameInstances[k];
+                game2.instanceIndex = k;
+            }
+
+            if (this.gameInstances.Count == 1)
+            {
+                Game1 game3 = this.gameInstances[0];
+                LoadInstance(game3, force: true);
+                game3.staticVarHolder = null;
+                Game1.EndLocalMultiplayer();
+            }
+
+            bool flag2 = false;
+            if (this.gameInstances.Count > 0)
+            {
+                foreach (Game1 gameInstance2 in this.gameInstances)
+                {
+                    if (gameInstance2.instancePlayerOneIndex == PlayerIndex.One)
+                    {
+                        flag2 = true;
+                        break;
+                    }
+                }
+
+                if (!flag2)
+                {
+                    this.gameInstances[0].instancePlayerOneIndex = PlayerIndex.One;
+                }
+            }
+
+            this.gameInstancesToRemove.Clear();
+            this._windowSizeChanged = true;
+        }
+
+        base.Update(gameTime);
     }
 
     /// <summary>Update metadata when a split screen is added or removed.</summary>
@@ -190,4 +348,31 @@ internal class SGameRunner : GameRunner
                 Context.LastRemovedScreenId = id;
         }
     }
+
+#if SMAPI_FOR_ANDROID
+    public static event Action<GameTime>? _EventOnDraw;
+    protected override void Draw(GameTime time)
+    {
+        base.Draw(time);
+
+        try
+        {
+            _EventOnDraw?.Invoke(time);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+            this.Monitor.Log(ex.GetLogSummary(), LogLevel.Error);
+        }
+    }
+
+    internal static void RegisterOnDraw(Action<GameTime> draw)
+    {
+        _EventOnDraw += draw;
+    }
+    internal static void UnregisterOnDraw(Action<GameTime> draw)
+    {
+        _EventOnDraw -= draw;
+    }
+#endif
 }

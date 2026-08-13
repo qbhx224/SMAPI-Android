@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI.Framework.ModLoading.Framework;
 using StardewValley;
+using StardewValley.Menus;
 
 namespace StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_6;
 
@@ -17,6 +18,7 @@ public class Game1Facade : Game1, IRewriteFacade
     public bool gamePadControlsImplemented { get; set; }              // never used
     public static bool menuUp { get; set; }                           // mostly unused and always false
     public static Color morningColor { get; set; } = Color.LightBlue; // never used
+    public static IList<GameLocation> locations => game1._locations;         // make like PC
 
 
     /*********
@@ -24,8 +26,7 @@ public class Game1Facade : Game1, IRewriteFacade
     *********/
     public static bool canHaveWeddingOnDay(int day, string season)
     {
-        return
-            Utility.TryParseEnum(season, out Season parsedSeason)
+        return Utility.TryParseEnum(season, out Season parsedSeason)
             && Game1.canHaveWeddingOnDay(day, parsedSeason);
     }
 
@@ -174,6 +175,16 @@ public class Game1Facade : Game1, IRewriteFacade
     {
         Game1.playSound(cueName, pitch);
     }
+
+#if SMAPI_FOR_ANDROID
+
+    public static IList<IClickableMenu> onScreenMenus
+    {
+        get => Game1.onScreenMenus;
+        set => Game1.onScreenMenus = new List<IClickableMenu>(value);
+    }
+
+#endif
 
 
     /*********

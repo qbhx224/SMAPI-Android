@@ -4,6 +4,7 @@ using System.Reflection;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Framework.Extensions;
 using StardewModdingAPI.Internal;
+using StardewModdingAPI.Mobile;
 
 namespace StardewModdingAPI.Framework.Events;
 

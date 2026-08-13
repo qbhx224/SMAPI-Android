@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Mono.Cecil;
@@ -51,7 +52,23 @@ internal class PlatformAssemblyMap : IDisposable
         // cache assembly metadata
         this.Targets = targetAssemblies;
         this.TargetReferences = this.Targets.ToDictionary(assembly => assembly, assembly => AssemblyNameReference.Parse(assembly.FullName));
+
+#if SMAPI_FOR_ANDROID
+        //src code https://github.com/ZaneYork/SMAPI/blob/bfb0adb849310f6928f299f0f92d2eae3242da84/src/SMAPI/Framework/ModLoading/PlatformAssemblyMap.cs#L57
+        this.TargetModules = this.Targets.ToDictionary(
+            assembly => assembly,
+            assembly =>
+            {
+                // 不用 Module.FullyQualifiedName（blob 加载的程序集可能无 .dll 后缀），
+                // 用程序集名 + ".dll" 拼接（克隆到 Stardew Assemblies 的文件名）
+                string assemblyFileName = assembly.GetName().Name + ".dll";
+                string assemblyFullPath = Path.Combine(Constants.GamePath, assemblyFileName);
+                var module = ModuleDefinition.ReadModule(assemblyFullPath, new ReaderParameters { InMemory = true });
+                return module;
+            });
+#else
         this.TargetModules = this.Targets.ToDictionary(assembly => assembly, assembly => ModuleDefinition.ReadModule(assembly.Modules.Single().FullyQualifiedName, new ReaderParameters { InMemory = true }));
+#endif
     }
 
     /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>

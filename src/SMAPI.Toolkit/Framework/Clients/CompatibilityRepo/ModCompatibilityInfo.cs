@@ -39,6 +39,7 @@ public class ModCompatibilityInfo
     /// <param name="unofficialVersion"><inheritdoc cref="UnofficialVersion" path="/summary"/></param>
     /// <param name="unofficialUrl"><inheritdoc cref="UnofficialUrl" path="/summary"/></param>
     /// <param name="abandonedReason"><inheritdoc cref="AbandonedReason" path="/summary"/></param>
+
     public ModCompatibilityInfo(ModCompatibilityStatus status, string? summary, string? htmlSummary, string? brokeIn, ISemanticVersion? unofficialVersion, string? unofficialUrl, ModCompatibilityReasonAbandoned abandonedReason)
     {
         this.Status = status;

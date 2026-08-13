@@ -95,6 +95,10 @@ internal static class LowLevelEnvironmentUtility
     /// </remarks>
     private static bool IsRunningAndroid()
     {
+#if SMAPI_FOR_ANDROID
+        return true;
+#endif
+
         using Process process = new()
         {
             StartInfo =
@@ -109,6 +113,7 @@ internal static class LowLevelEnvironmentUtility
 
         try
         {
+            //error here, try catch exception it will not works anymore
             process.Start();
             string output = process.StandardOutput.ReadToEnd();
             return !string.IsNullOrWhiteSpace(output);

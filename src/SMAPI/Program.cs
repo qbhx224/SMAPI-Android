@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
+using Microsoft.VisualBasic;
+using StardewModdingAPI.Mobile;
 using StardewModdingAPI.Framework;
 using StardewModdingAPI.Toolkit.Serialization.Models;
 using StardewModdingAPI.Toolkit.Utilities;
 using StardewValley;
+using Android.Views;
 
 namespace StardewModdingAPI;
 
@@ -23,7 +27,6 @@ internal class Program
     /// <summary>The assembly paths in the search folders indexed by assembly name.</summary>
     private static Dictionary<string, string>? AssemblyPathsByName;
 
-
     /*********
     ** Public methods
     *********/
@@ -31,26 +34,38 @@ internal class Program
     /// <param name="args">The command-line arguments.</param>
     public static void Main(string[] args)
     {
+#if SMAPI_FOR_ANDROID
+        AndroidPatcher.Setup();
+        AndroidMainThread.Init(args);
+#endif
         Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture; // per StardewValley.Program.Main
+#if !SMAPI_FOR_ANDROID
         Console.Title = $"SMAPI {EarlyConstants.RawApiVersion}";
-
+#endif
         try
         {
             AppDomain.CurrentDomain.AssemblyResolve += Program.CurrentDomain_AssemblyResolve;
+#if !SMAPI_FOR_ANDROID
             Program.AssertGamePresent();
             Program.AssertGameVersion();
             Program.AssertSmapiVersions();
             Program.AssertDepsJson();
+#endif
             Program.Start(args);
         }
         catch (BadImageFormatException ex) when (ex.FileName == EarlyConstants.GameAssemblyName)
         {
             Console.WriteLine($"SMAPI failed to initialize because your game's {ex.FileName}.exe seems to be invalid.\nThis may be a pirated version which modified the executable in an incompatible way; if so, you can try a different download or buy a legitimate version.\n\nTechnical details:\n{ex}");
         }
+
         catch (Exception ex)
         {
-            Console.WriteLine($"SMAPI failed to initialize: {ex}");
-            Program.PressAnyKeyToExit(true);
+            string logMessage = $"SMAPI failed to initialize: {ex}";
+            Console.WriteLine(logMessage);
+            IMonitor? monitor = SCore.Instance?.SMAPIMonitor;
+            monitor?.Log(logMessage, LogLevel.Error);
+
+            PressAnyKeyToExit(true);
         }
     }
 
@@ -76,7 +91,9 @@ internal class Program
                     {
                         string? curName = AssemblyName.GetAssemblyName(dllPath).Name;
                         if (curName != null)
+                        {
                             Program.AssemblyPathsByName[curName] = dllPath;
+                        }
                     }
                     catch
                     {
@@ -84,15 +101,21 @@ internal class Program
                     }
                 }
             }
+#if SMAPI_FOR_ANDROID
+            //fix missing remap dll name pc to android
+            Program.AssemblyPathsByName["Stardew Valley"] = EarlyConstants.GamePath + "/StardewValley.dll";
+#endif
         }
 
         // resolve
         try
         {
+
             string? searchName = new AssemblyName(e.Name).Name;
-            return searchName != null && Program.AssemblyPathsByName.TryGetValue(searchName, out string? assemblyPath)
+            var resolveAsm = searchName != null && Program.AssemblyPathsByName.TryGetValue(searchName, out string? assemblyPath)
                 ? Assembly.LoadFrom(assemblyPath)
                 : null;
+            return resolveAsm;
         }
         catch (Exception ex)
         {
@@ -228,8 +251,15 @@ internal class Program
         }
 
         // load SMAPI
-        using SCore core = new(modsPath, writeToConsole, developerMode);
+#if SMAPI_FOR_ANDROID
+        developerMode = true;
+        writeToConsole = false;
+        modsPath = Path.Combine(EarlyConstants.ExternalFilesDir, "Mods");
+        SCore core = new(modsPath, writeToConsole, developerMode);
+        //before run game you should apply Harmony Patch
+        AndroidPatcher.OnBeforeSCoreRun();
         core.RunInteractively();
+#endif
     }
 
     /// <summary>Write an error directly to the console and exit.</summary>
@@ -237,6 +267,13 @@ internal class Program
     /// <param name="technicalMessage">An additional message to log with technical details.</param>
     private static void PrintErrorAndExit(string message, string? technicalMessage = null)
     {
+
+#if SMAPI_FOR_ANDROID
+        AndroidLogger.Log("PrintErrorAndExit: msg: " + message);
+        AndroidLogger.Log("technicalMsg: " + technicalMessage);
+        return;
+#endif
+
         Console.ForegroundColor = ConsoleColor.Red;
         Console.WriteLine(message);
         Console.ResetColor();
@@ -257,6 +294,12 @@ internal class Program
     /// <param name="showMessage">Whether to print a 'press any key to exit' message to the console.</param>
     private static void PressAnyKeyToExit(bool showMessage)
     {
+#if SMAPI_FOR_ANDROID
+        AndroidLogger.Log("PressAnyKeyToExit: Game has ended. Press any key to exit.");
+        SMAPIActivityTool.ExitGame();
+        return;
+#endif
+
         if (showMessage)
             Console.WriteLine("Game has ended. Press any key to exit.");
         Thread.Sleep(100);

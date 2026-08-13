@@ -332,9 +332,16 @@ internal class ReplaceReferencesRewriter : BaseInstructionHandler
                 return false;
         }
 
+#if SMAPI_FOR_ANDROID
         // apply options
-        if (fromMember.Resolve() is not null)
-            return false;
+        //if (fromMember.Resolve() is not null)
+        //{
+        //    Console.WriteLine("from member map: " + fromMember.FullName);
+        //    Console.WriteLine("map type: " + mappedToMethod);
+        //    Console.WriteLine("resolve failed");
+        //    return false;
+        //}
+#endif
 
         // apply
         switch (mappedToMethod)

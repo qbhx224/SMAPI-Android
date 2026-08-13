@@ -40,7 +40,9 @@
 
         <!-- Android Only -->
         <PackageVersion Include="DeepCloner" Version="0.10.4" />
-        <PackageVersion Include="SkiaSharp" Version="2.88.9" />
+        <!-- 固定 2.88.0：构建产物与第三方 mod 均强签名引用 SkiaSharp 2.88.0.0（0738eb9f132ed756），
+             升版本会导致强签名绑定失败。Android 由启动器 blob 提供，勿动。 -->
+        <PackageVersion Include="SkiaSharp" Version="2.88.0" />
         <PackageVersion Include="StbImageWriteSharp" Version="1.16.7" />
         <PackageVersion Include="System.Management" Version="8.0.0" />
         <PackageVersion Include="System.Reflection.Emit" Version="4.7.0" />

@@ -6,6 +6,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <PublishTrimmed Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net6.0'))">true</PublishTrimmed>
+
+    <Platforms>AnyCPU;ARM64</Platforms>
+
+    <Configurations>Debug;Release;Android Debug;Android Release</Configurations>
   </PropertyGroup>
 
   <Import Project="..\..\build\common.targets" />

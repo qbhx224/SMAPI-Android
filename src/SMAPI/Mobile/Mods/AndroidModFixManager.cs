@@ -9,7 +9,7 @@ using StardewModdingAPI.Framework;
 using StardewModdingAPI.Internal;
 
 namespace StardewModdingAPI.Mobile;
-internal class AndroidModFixManager
+internal class AndroidModFixManager : IMobileFixRegistry
 {
     class OnModLoadedCallbackList
     {
@@ -81,6 +81,15 @@ internal class AndroidModFixManager
         cbList.AddCallback(callback);
 
     }
+
+    //---- IMobileFixRegistry（供外部修复插件使用）----
+    IMonitor IMobileFixRegistry.Monitor => this.monitor;
+
+    void IMobileFixRegistry.RegisterRewriteModAssemblyDef(string assemblyName, Action<Mono.Cecil.AssemblyDefinition> callback)
+        => this.RegisterRewriteModAssemblyDef(assemblyName, callback);
+
+    void IMobileFixRegistry.RegisterOnPostModEntry(string asmFileName, Action<IMod> onPostModEntry)
+        => this.RegisterOnPostModEntry(asmFileName, new OnPostfixModEntryDelegate(onPostModEntry));
 
     //key: AssemblyName, value: callback
     Dictionary<string, Action<Mono.Cecil.AssemblyDefinition>> OnRewriteModDictionary = new();

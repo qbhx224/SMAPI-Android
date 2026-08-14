@@ -16,7 +16,7 @@ static class DisableSaveBackup
     static bool isApplyPatched = false;
     public static void Init(AndroidModFixManager modFix)
     {
-        modFix.RegisterOnModLoaded(SpaceCoreFix.SpaceCoreDllFileName, OnModLoaded);
+        modFix.RegisterOnModLoaded("SpaceCore.dll", OnModLoaded);
         modFix.RegisterOnModLoaded(FarmTypeManagerFix.DllFileName, OnModLoaded);
     }
 

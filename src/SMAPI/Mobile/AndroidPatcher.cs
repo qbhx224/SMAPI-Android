@@ -54,9 +54,10 @@ internal static class AndroidPatcher
     {
         //Register mod fix here
         var modFix = AndroidModFixManager.Init();
+        //外部修复插件（管理器安装到 ExternalFilesDir/ModFixes）
+        ModFixPluginLoader.LoadPlugins(modFix);
         //list mods
         FarmTypeManagerFix.Init(modFix);
-        SpaceCoreFix.Init(modFix);
         SveFix.Init(modFix);
         GenericConfigMenuModFix.Init(modFix);
         UnlockableBundlesModFix.Init(modFix);

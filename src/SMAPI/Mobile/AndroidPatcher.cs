@@ -3,7 +3,6 @@ using HarmonyLib;
 using StardewModdingAPI.Framework;
 using StardewModdingAPI.Internal;
 using StardewModdingAPI.Mobile.Facade;
-using StardewModdingAPI.Mobile.Mods;
 using StardewModdingAPI.Mobile.Vectors;
 using StardewValley.Menus;
 
@@ -56,14 +55,6 @@ internal static class AndroidPatcher
         var modFix = AndroidModFixManager.Init();
         //外部修复插件（管理器安装到 ExternalFilesDir/ModFixes）
         ModFixPluginLoader.LoadPlugins(modFix);
-        //list mods
-        FarmTypeManagerFix.Init(modFix);
-        SveFix.Init(modFix);
-        GenericConfigMenuModFix.Init(modFix);
-        UnlockableBundlesModFix.Init(modFix);
-        FashionSenseModFix.Init(modFix);
-        DisableSaveBackup.Init(modFix);
-        ModQuickSaveOptionPage.Init(modFix);
     }
     internal static void OnBeforeSCoreRun()
     {

@@ -52,9 +52,5 @@ public class OptionsPageFacade : OptionsPage, IRewriteFacade
                 Game1.content.LoadString("Strings\\StringsFromCSFiles:OptionsPage.cs.11246"),
                 3
             ));
-
-
-        // check QuickSave mod available
-        ModQuickSaveOptionPage.SetupOptionPage(__instance, ref ___options);
     }
 }

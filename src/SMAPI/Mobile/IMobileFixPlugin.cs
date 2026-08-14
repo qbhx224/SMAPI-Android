@@ -1,6 +1,8 @@
 using System;
 using System.Reflection;
+using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
+using StardewValley.Mods;
 
 namespace StardewModdingAPI.Mobile;
 
@@ -11,6 +13,15 @@ public interface IMobileFixRegistry
 {
     /// <summary>SMAPI 日志（插件用它输出日志）。</summary>
     IMonitor Monitor { get; }
+
+    /// <summary>当前渲染步骤（Overlays/FullScene 等）。</summary>
+    RenderSteps CurrentRenderedStep { get; }
+
+    /// <summary>渲染步骤事件（Overlays 阶段回调，用于绘制覆盖层）。</summary>
+    event Action<RenderSteps, SpriteBatch, RenderTarget2D?> OnRenderedStep;
+
+    /// <summary>按唯一 ID 获取已加载的 mod 实例（未加载返回 null）。</summary>
+    IMod? GetMod(string uniqueId);
 
     /// <summary>目标 mod 程序集加载完成后回调（对应 AppDomain.AssemblyLoad）。</summary>
     /// <param name="dllFileName">目标 DLL 文件名（如 "SpaceCore.dll"）。</param>

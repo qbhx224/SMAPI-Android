@@ -16,7 +16,6 @@ using StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_5;
 using StardewModdingAPI.Framework.ModLoading.Rewriters.StardewValley_1_6;
 using StardewModdingAPI.Mobile;
 using StardewModdingAPI.Mobile.Facade;
-using StardewModdingAPI.Mobile.Mods;
 using StardewValley;
 using StardewValley.Audio;
 using StardewValley.BellsAndWhistles;

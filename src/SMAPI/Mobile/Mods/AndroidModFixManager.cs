@@ -85,6 +85,28 @@ internal class AndroidModFixManager : IMobileFixRegistry
     //---- IMobileFixRegistry（供外部修复插件使用）----
     IMonitor IMobileFixRegistry.Monitor => this.monitor;
 
+    StardewValley.Mods.RenderSteps IMobileFixRegistry.CurrentRenderedStep => SModHooks.CurrentRenderedStep;
+
+    // 外部插件的 Action<> 需桥接为内部委托类型；记录映射以便 remove 解绑同一实例
+    static readonly Dictionary<Action<StardewValley.Mods.RenderSteps, Microsoft.Xna.Framework.Graphics.SpriteBatch, Microsoft.Xna.Framework.Graphics.RenderTarget2D?>, SCore.OnRenderedStepDelegate> RenderStepHandlerMap = new();
+
+    event Action<StardewValley.Mods.RenderSteps, Microsoft.Xna.Framework.Graphics.SpriteBatch, Microsoft.Xna.Framework.Graphics.RenderTarget2D?> IMobileFixRegistry.OnRenderedStep
+    {
+        add
+        {
+            SCore.OnRenderedStepDelegate handler = (step, spriteBatch, renderTarget) => value(step, spriteBatch, renderTarget);
+            RenderStepHandlerMap[value] = handler;
+            SCore.OnRenderedStepEvent += handler;
+        }
+        remove
+        {
+            if (RenderStepHandlerMap.Remove(value, out SCore.OnRenderedStepDelegate? handler))
+                SCore.OnRenderedStepEvent -= handler;
+        }
+    }
+
+    IMod? IMobileFixRegistry.GetMod(string uniqueId) => SCore.Instance.GetModRegistry().Get(uniqueId)?.Mod;
+
     void IMobileFixRegistry.RegisterRewriteModAssemblyDef(string assemblyName, Action<Mono.Cecil.AssemblyDefinition> callback)
         => this.RegisterRewriteModAssemblyDef(assemblyName, callback);
 

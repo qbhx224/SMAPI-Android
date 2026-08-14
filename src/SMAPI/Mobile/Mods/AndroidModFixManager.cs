@@ -83,18 +83,20 @@ internal class AndroidModFixManager : IMobileFixRegistry
     }
 
     //---- IMobileFixRegistry（供外部修复插件使用）----
+    int IMobileFixRegistry.ApiVersion => 1;
+
     IMonitor IMobileFixRegistry.Monitor => this.monitor;
 
-    StardewValley.Mods.RenderSteps IMobileFixRegistry.CurrentRenderedStep => SModHooks.CurrentRenderedStep;
+    MobileRenderStep IMobileFixRegistry.CurrentRenderedStep => (MobileRenderStep)(int)SModHooks.CurrentRenderedStep;
 
     // 外部插件的 Action<> 需桥接为内部委托类型；记录映射以便 remove 解绑同一实例
-    static readonly Dictionary<Action<StardewValley.Mods.RenderSteps, Microsoft.Xna.Framework.Graphics.SpriteBatch, Microsoft.Xna.Framework.Graphics.RenderTarget2D?>, SCore.OnRenderedStepDelegate> RenderStepHandlerMap = new();
+    static readonly Dictionary<Action<MobileRenderStep>, SCore.OnRenderedStepDelegate> RenderStepHandlerMap = new();
 
-    event Action<StardewValley.Mods.RenderSteps, Microsoft.Xna.Framework.Graphics.SpriteBatch, Microsoft.Xna.Framework.Graphics.RenderTarget2D?> IMobileFixRegistry.OnRenderedStep
+    event Action<MobileRenderStep> IMobileFixRegistry.OnRenderedStep
     {
         add
         {
-            SCore.OnRenderedStepDelegate handler = (step, spriteBatch, renderTarget) => value(step, spriteBatch, renderTarget);
+            SCore.OnRenderedStepDelegate handler = (step, spriteBatch, renderTarget) => value((MobileRenderStep)(int)step);
             RenderStepHandlerMap[value] = handler;
             SCore.OnRenderedStepEvent += handler;
         }

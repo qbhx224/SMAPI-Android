@@ -1,24 +1,27 @@
 using System;
 using System.Reflection;
-using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
-using StardewValley.Mods;
 
 namespace StardewModdingAPI.Mobile;
 
 /// <summary>
 /// mod 修复插件注册表（SMAPI 提供，插件通过它挂接修复回调）。
+/// 本接口为插件 API 契约：语义稳定，核心实现可重构但成员语义不变；
+/// 版本不匹配时插件会被显式跳过（见 <see cref="ApiVersion"/>）。
 /// </summary>
 public interface IMobileFixRegistry
 {
+    /// <summary>注册表 API 版本。插件 <see cref="IMobileFixPlugin.ApiVersion"/> 必须与之严格一致，否则拒绝加载。</summary>
+    int ApiVersion { get; }
+
     /// <summary>SMAPI 日志（插件用它输出日志）。</summary>
     IMonitor Monitor { get; }
 
-    /// <summary>当前渲染步骤（Overlays/FullScene 等）。</summary>
-    RenderSteps CurrentRenderedStep { get; }
+    /// <summary>当前渲染步骤（语义：每帧渲染管线按序切换，Overlays 为界面覆盖层阶段）。</summary>
+    MobileRenderStep CurrentRenderedStep { get; }
 
-    /// <summary>渲染步骤事件（Overlays 阶段回调，用于绘制覆盖层）。</summary>
-    event Action<RenderSteps, SpriteBatch, RenderTarget2D?> OnRenderedStep;
+    /// <summary>渲染步骤事件（每次渲染步骤切换时触发，用于在 Overlays 阶段绘制覆盖层）。</summary>
+    event Action<MobileRenderStep> OnRenderedStep;
 
     /// <summary>按唯一 ID 获取已加载的 mod 实例（未加载返回 null）。</summary>
     IMod? GetMod(string uniqueId);
@@ -41,9 +44,13 @@ public interface IMobileFixRegistry
 
 /// <summary>
 /// mod 修复插件：放入启动器 ExternalFilesDir/ModFixes 目录，SMAPI 启动时自动发现并加载。
+/// 版本约定：ApiVersion 必须与注册表一致，否则插件被跳过并记录警告。
 /// </summary>
 public interface IMobileFixPlugin
 {
+    /// <summary>插件要求的注册表 API 版本（须与 <see cref="IMobileFixRegistry.ApiVersion"/> 严格一致）。</summary>
+    int ApiVersion { get; }
+
     /// <summary>初始化插件并注册修复回调。</summary>
     /// <param name="registry">修复注册表。</param>
     void Init(IMobileFixRegistry registry);
